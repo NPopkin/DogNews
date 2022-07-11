@@ -8,17 +8,13 @@ import dateutil
 import pandas as pd
 
 
-def send_request(i):
+def send_request(i, begin_date, end_date):
     apikey = 'ijobGfJ5GXleHBMzVTpoySL5vvhMT6Vc'
-    # https://api.nytimes.com/svc/search/v2/articlesearch.json?q=<QUERY>&api-key=<APIKEY>
-    # Use - https://developer.nytimes.com/docs/articlesearch-product/1/routes/articlesearch.json/get to explore API
     query = "dog"
-    begin_date = "19000101"  # YYYYMMDD
-    end_date = "19500101"  # YYYYMMDD
     document_type = "article"
-    filter_query = "\"title:(\"dog\") and body:(\"breed\") \""  # http://www.lucenetutorial.com/lucene-query-syntax.html
+    filter_query = "\"title:(\"dog\") and body:(\"dog\") \""  # http://www.lucenetutorial.com/lucene-query-syntax.html
     page = i  # <0-100>
-    sort = "relevance"  # newest, oldest
+    sort = "relevance"  # newest, oldest,relevance
     query_url = f"https://api.nytimes.com/svc/search/v2/articlesearch.json?" \
                 f"q={query}" \
                 f"&api-key={apikey}" \
@@ -34,18 +30,30 @@ def send_request(i):
 
 
 def is_news(article):
-    if article['document_type'] == 'article' and (article['type_of_material'] == 'News' or article['type_of_material'] == 'Archives'):
+    if 'type_of_material' not in article:
+        return False
+    if 'document_type' not in article:
+        return False
+    if article['document_type'] == 'article' and (
+            article['type_of_material'] == 'News' or article['type_of_material'] == 'Archives'):
         return True
     return False
+
+
+def add_data(data, article, col):
+    if col in article:
+        data[col].append(article[col])
+    else:
+        data[col].append(None)
 
 
 def parse_response(response):
     '''Parses and returns response as pandas data frame.'''
     data = {'headline': [],
             'date': [],
-            'doc_type': [],
-            'material_type': [],
-            'section': [],
+            'document_type': [],
+            'type_of_material': [],
+            'section_name': [],
             'keywords': [],
             'snippet': [],
             'source': [],
@@ -56,29 +64,14 @@ def parse_response(response):
             date = dateutil.parser.parse(article['pub_date']).date()
             data['date'].append(date)
             data['headline'].append(article['headline']['main'])
-            if 'section' in article:
-                data['section'].append(article['section_name'])
-            else:
-                data['section'].append(None)
-            data['doc_type'].append(article['document_type'])
-            if 'type_of_material' in article:
-                data['material_type'].append(article['type_of_material'])
-            else:
-                data['material_type'].append(None)
-            if 'snippet' in article:
-                data['snippet'].append(article['snippet'])
-            else:
-                data['snippet'].append(None)
-            if 'lead_paragraph' in article:
-                data['lead_paragraph'].append(article['lead_paragraph'])
-            else:
-                data['lead_paragraph'].append(None)
-            if 'source' in article:
-                data['source'].append(article['source'])
-            else:
-                data['source'].append(None)
             keywords = [keyword['value'] for keyword in article['keywords'] if keyword['name'] == 'subject']
             data['keywords'].append(keywords)
+            add_data(data, article, 'section_name')
+            add_data(data, article, 'document_type')
+            add_data(data, article, 'type_of_material')
+            add_data(data, article, 'snippet')
+            add_data(data, article, 'lead_paragraph')
+            add_data(data, article, 'source')
     return pd.DataFrame(data)
 
 
@@ -87,24 +80,26 @@ def get_data():
     total = 0
     if not os.path.exists('headlines'):
         os.mkdir('headlines')
-    response = send_request('0')
-    pprint(response)
+    response = send_request('0', "19500101", "19600101")
     df = parse_response(response)
     total += len(df)
-    done_flag=False
-    for i in range(1, 99):
-        if not done_flag:
-            print(str(i))
-            response = send_request(str(i))
-            pprint(response)
-            df_temp = parse_response(response)
-            print (df_temp)
-            print (df_temp.shape[0])
-            total += len(df_temp)
-            df = pd.concat([df,df_temp])
-            time.sleep(7)
 
-    df.to_csv('nyt_1900_1950.csv', index=False)
+    dates = ["19500101", "19600101", "19700101", "19800101", "19900101", "20000101", "20100101", "20200101"]  # YYYYMMDD
+    for d in range(1, len(dates) - 1):
+        begin_date = dates[d]
+        end_date = dates[d + 1]
+        done_flag = False
+        for i in range(1, 50):
+            if not done_flag:
+                response = send_request(str(i), begin_date, end_date)
+                df_temp = parse_response(response)
+                if df_temp.shape[0] == 0:
+                    done_flag = True
+                total += len(df_temp)
+                df = pd.concat([df, df_temp])
+                time.sleep(7)
+
+    df.to_csv('nyt_1950_2020.csv', index=False)
     print('Number of articles collected: ' + str(total))
 
 
