@@ -97,7 +97,7 @@ def get_data():
                     done_flag = True
                 total += len(df_temp)
                 df = pd.concat([df, df_temp])
-                time.sleep(7)
+                time.sleep(7) # this is necisary or 
 
     df.to_csv('nyt_1950_2020.csv', index=False)
     print('Number of articles collected: ' + str(total))
