@@ -8,8 +8,9 @@ import dateutil
 import pandas as pd
 
 
+# for each date range request specific nyt query and return json
 def send_request(i, begin_date, end_date):
-    apikey = 'ijobGfJ5GXleHBMzVTpoySL5vvhMT6Vc'
+    apikey = 'ADD YOU OWN API KEY HERE'
     query = "dog"
     document_type = "article"
     filter_query = "\"title:(\"dog\") and body:(\"dog\") \""  # http://www.lucenetutorial.com/lucene-query-syntax.html
@@ -29,6 +30,7 @@ def send_request(i, begin_date, end_date):
     return r.json()
 
 
+# returns true if it is a news article (to filter out any other types of media)
 def is_news(article):
     if 'type_of_material' not in article:
         return False
@@ -40,6 +42,7 @@ def is_news(article):
     return False
 
 
+# adds data or empty column
 def add_data(data, article, col):
     if col in article:
         data[col].append(article[col])
@@ -47,6 +50,7 @@ def add_data(data, article, col):
         data[col].append(None)
 
 
+# parses json to extract data
 def parse_response(response):
     '''Parses and returns response as pandas data frame.'''
     data = {'headline': [],
@@ -75,8 +79,8 @@ def parse_response(response):
     return pd.DataFrame(data)
 
 
+# Sends and parses request/response to/from NYT Archive API for given dates.
 def get_data():
-    '''Sends and parses request/response to/from NYT Archive API for given dates.'''
     total = 0
     if not os.path.exists('headlines'):
         os.mkdir('headlines')
@@ -97,7 +101,7 @@ def get_data():
                     done_flag = True
                 total += len(df_temp)
                 df = pd.concat([df, df_temp])
-                time.sleep(7) # this is necisary or 
+                time.sleep(7)  # this is necessary for NYT protocol
 
     df.to_csv('nyt_1950_2020.csv', index=False)
     print('Number of articles collected: ' + str(total))

@@ -5,7 +5,9 @@ import numpy as np
 import re
 import nltk
 from gensim.models import Word2Vec
-
+from matplotlib import pyplot as plt
+from sklearn.manifold import TSNE
+import matplotlib.cm as cm
 nltk.download('omw-1.4')
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -62,9 +64,24 @@ data["headline_clean"] = data["headline"].apply(lambda x: process_text(x))
 
 # Word2Vec Model
 
-# tokens = data["lead_paragraph_clean"].apply(lambda x: nltk.word_tokenize(x))
+tokens = data["lead_paragraph_clean"].apply(lambda x: nltk.word_tokenize(x))
+w2v_model = Word2Vec(sentences=tokens, vector_size=100, window=8, min_count=100, alpha=0.03,seed=42, workers=4)
+vocab=w2v_model.wv.key_to_index
 
-# w2v_model = Word2Vec(sentences=tokens, vector_size=100, window=8, min_count=100, alpha=0.03,seed=42, workers=4)
-# vocab=w2v_model.wv.key_to_index
+
 
 # topic modeling
+dictionary = gensim.corpora.Dictionary(tokens)
+dictionary.filter_extremes(no_below=15, no_above=0.5, keep_n=100000)
+# Create doc2bow dictionary
+bow_corpus = [dictionary.doc2bow(doc) for doc in tokens]
+
+# Create TFIDF model
+from gensim import corpora, models
+tfidf = models.TfidfModel(bow_corpus)
+corpus_tfidf = tfidf[bow_corpus]
+# LDA model
+if __name__ == '__main__':
+    lda_model_tfidf = gensim.models.LdaMulticore(corpus_tfidf, num_topics=4, id2word=dictionary, passes=2, workers=4)
+    for idx, topic in lda_model_tfidf.print_topics(-1):
+        print('Topic: {} Word: {}'.format(idx, topic))
