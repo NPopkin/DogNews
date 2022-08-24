@@ -1,5 +1,5 @@
 ## Dog News Project
-This project looked at 2,000 news articles from th NYt and analyzed what type of language was used in these articles using basic visualization techniques along with NLP tools such as Word2Vec and topic modeling. Generally, most of the articles published dispurpotionalty were about dog shows and in the future it would be interesting to diversify and increase the data used.
+This project looked at 2,000 news articles from th NYT and analyzed what type of language was used in these articles using basic visualization techniques along with NLP tools such as Word2Vec and topic modeling. Generally, most of the articles published dispurpotionalty were about dog shows and in the future it would be interesting to diversify and increase the data used.
 
 
 ## NYT Data
